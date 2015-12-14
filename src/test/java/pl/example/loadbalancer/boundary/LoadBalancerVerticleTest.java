@@ -1,30 +1,42 @@
 package pl.example.loadbalancer.boundary;
 
+import io.vertx.core.Vertx;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import pl.example.loadbalancer.control.GroupsConfiguration;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.closeTo;
 
-public class LoadBalancerVerticleIT {
+public class LoadBalancerVerticleTest {
 
     static WebTarget target = ClientBuilder.newClient().target("http://localhost:8080/route");
+    private Vertx vertx;
+
+    @Before
+    public void setUp() {
+        vertx = Vertx.vertx();
+        vertx.deployVerticle(LoadBalancerVerticle.class.getName());
+    }
+
+    @After
+    public void tearDown() {
+        vertx.close();
+    }
 
     @Test
     public void shouldReturnSameGroupsForKnownClients() throws InterruptedException {
         //given
-        List<String> clientIds = Arrays.asList("cl1", "cl2", "cl3", "cl4", "cl5", "cl6", "cl7", "cl8", "cl9", "cl10");
+        List<String> clientIds = testClientIds();
 
         //when
         Map<String, String> clientGroups = getGroupsForClients(clientIds);
@@ -41,7 +53,7 @@ public class LoadBalancerVerticleIT {
     @Test
     public void shouldBalanceUsersToGroupsFromConfiguration() {
         //given
-        List<String> clientIds = Arrays.asList("cl1", "cl2", "cl3", "cl4", "cl5", "cl6", "cl7", "cl8", "cl9", "cl10");
+        List<String> clientIds = testClientIds();
 
         //when
         Map<String, String> clientGroups = getGroupsForClients(clientIds);
@@ -51,6 +63,15 @@ public class LoadBalancerVerticleIT {
             double frequency = calculatePercentageFrequencyFor(g.getName(), clientGroups.values());
             Assert.assertThat(frequency, is(closeTo(g.getWeight() * 10, 5)));
         });
+    }
+
+    private List<String> testClientIds() {
+        int size = 10000;
+        List<String> clientIds = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            clientIds.add(UUID.randomUUID().toString());
+        }
+        return clientIds;
     }
 
     private Map<String, String> getGroupsForClients(List<String> clientIds) {

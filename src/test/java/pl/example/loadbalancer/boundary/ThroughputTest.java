@@ -1,5 +1,6 @@
 package pl.example.loadbalancer.boundary;
 
+import io.vertx.core.Vertx;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -29,6 +30,9 @@ public class ThroughputTest {
     }
 
     public static void main(String[] args) throws RunnerException {
+        Vertx vertx = Vertx.vertx();
+        vertx.deployVerticle(LoadBalancerVerticle.class.getName());
+
         Options options = new OptionsBuilder()
                 .include(ThroughputTest.class.getSimpleName())
                 .warmupIterations(5)
@@ -37,6 +41,7 @@ public class ThroughputTest {
                 .shouldFailOnError(true).shouldDoGC(true).build();
         new Runner(options).run();
 
+        vertx.close();
     }
 
 }
