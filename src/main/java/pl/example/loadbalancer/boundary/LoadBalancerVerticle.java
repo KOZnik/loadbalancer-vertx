@@ -4,13 +4,12 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
-import pl.example.loadbalancer.control.QueueBalancingStrategy;
 
 public class LoadBalancerVerticle extends AbstractVerticle {
 
     @Override
     public void start(Future<Void> fut) {
-        Balancer balancer = new Balancer(vertx.sharedData(), new QueueBalancingStrategy());
+        HashingBalancer balancer = new HashingBalancer();
 
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
