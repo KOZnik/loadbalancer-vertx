@@ -2,6 +2,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 
+import scala.concurrent.duration._
+
 class LoadBalancerSimulation extends Simulation {
 
   val config: Config = ConfigFactory.load()
@@ -13,9 +15,11 @@ class LoadBalancerSimulation extends Simulation {
 
   val scn = scenario("Load balancing scenario")
     .feed(usersFeeder)
-    .exec(http("Get group for user")
-    .get("/route/${user}")
-    .check(status.is(200)))
+    .during(30 seconds) {
+    exec(http("Get group for user")
+      .get("/route/${user}")
+      .check(status.is(200)))
+  }
 
-  setUp(scn.inject(rampUsers(8800) over(4))).protocols(httpProtocol)
+  setUp(scn.inject(rampUsers(1000) over (30 seconds))).protocols(httpProtocol)
 }
